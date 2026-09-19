@@ -135,7 +135,7 @@ valorant-sens-tool/
 ### 本地运行
 
 ```bash
-git clone https://github.com/<你的用户名>/valorant-sens-tool.git
+git clone https://github.com/kangjinning/valorant-sens-tool.git
 cd valorant-sens-tool
 # 双击 index.html；或起一个本地服务（与线上环境一致）
 python -m http.server 8080     # → http://localhost:8080/
