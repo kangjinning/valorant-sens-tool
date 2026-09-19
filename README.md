@@ -234,7 +234,4 @@ VALORANT 及相关名称、标识为 Riot Games, Inc. 的商标或注册商标�
 
 ## 许可证
 
-本仓库尚未指定开源许可证 —— 未声明许可证时默认保留所有权利。
-如果要允许他人自由使用 / 修改，建议在根目录加一个 `LICENSE` 文件
-（[MIT 模板](https://choosealicense.com/licenses/mit/)，把年份与作者换成你自己），
-然后把这一节改成 `MIT License`。
+`MIT License`
