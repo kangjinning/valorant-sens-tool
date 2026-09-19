@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="无畏契约（VALORANT）灵敏度测试工具：实时计算 eDPI 与 cm/360，内置原始鼠标输入的转向测试画布、灵敏度换算、转身距离表与职业选手 eDPI 区间参考。纯前端实现，可离线使用。">
+<meta name="keywords" content="无畏契约,VALORANT,灵敏度,eDPI,DPI,cm/360,鼠标灵敏度测试,灵敏度换算">
+<meta name="theme-color" content="#0F1923">
+<meta name="color-scheme" content="dark">
+<title>无畏契约灵敏度测试工具 | eDPI 计算 · cm/360 · 鼠标转向测试</title>
+
+<!-- 站点规范地址（自有域名） -->
+<link rel="canonical" href="https://www.kang.love/">
+
+<!-- 社交平台分享卡片：og:image 必须是绝对地址 -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.kang.love/">
+<meta property="og:title" content="无畏契约灵敏度测试工具 | eDPI 计算 · cm/360 · 灵敏度匹配测试">
+<meta property="og:description" content="纯前端工具：实时算 eDPI / cm/360，内置全屏灵敏度匹配测试（多个候选档位跑同一套甩枪 + 跟枪挑战，按成绩给出推荐灵敏度）。零依赖、可离线运行。">
+<meta property="og:image" content="https://www.kang.love/images/screenshot-test.png">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<!--
+  说明：上面 og:image 指向站点里的 images/screenshot-test.png。
+  如果部署时不想上传 images/ 目录，删掉 og:image 那一行即可 ——
+  分享链接仍能正常显示标题与描述，只是没有缩略图。
+-->
+
+<!-- 本地样式表：无任何外部 CDN 依赖，可离线运行 -->
+<link rel="stylesheet" href="css/style.css">
+
+<!-- 内联 SVG 图标（data URI），避免额外图片文件与外部请求 -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%230F1923'/%3E%3Cpath d='M6 7h6.2l3.8 11.4L19.8 7H26l-7.1 18h-5.8z' fill='%23FF4655'/%3E%3C/svg%3E">
+</head>
+
+<body>
+<!-- 键盘用户跳过导航 -->
+<a class="skip-link" href="#input">跳到参数输入区</a>
+
+<!-- 无脚本降级提示：本站的计算与测试全部依赖 JavaScript -->
+<noscript>
+  <div class="wrap" style="padding:1rem 1.5rem;background:#B3262F;color:#fff">
+    <strong>需要启用 JavaScript</strong>
+    <p style="margin:.3rem 0 0;font-size:.9rem">
+      本工具的所有计算（eDPI / cm/360 / 测试评分）都在浏览器本地用 JavaScript 完成，
+      没有任何后端服务。请在浏览器设置中启用 JavaScript 后刷新页面。
+    </p>
+  </div>
+</noscript>
+
+<!-- ============================ 顶部导航 ============================ -->
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="#top">
+      <span class="brand-mark" aria-hidden="true">V</span>
+      <span class="brand-text">
+        <strong>无畏契约灵敏度测试工具</strong>
+        <small>VALORANT SENSITIVITY LAB</small>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="页面导航">
+      <a href="#input">参数输入</a>
+      <a href="#result">EDPI 结果</a>
+      <a href="#test">鼠标测试</a>
+      <a href="#reference">参考说明</a>
+    </nav>
+  </div>
+</header>
+
+<!-- 小屏设备提示：手机端无法准确还原鼠标输入 -->
+<div class="mobile-notice" id="mobile-notice">
+  <div class="wrap">
+    <strong>建议使用电脑访问</strong>
+    <p>本工具的转向测试需要鼠标原始输入，手机/平板的触屏无法准确模拟。<span class="mobile-notice-hide">参数计算功能仍可正常使用。</span></p>
+    <button type="button" class="btn btn-small" id="btn-dismiss-notice">知道了</button>
+  </div>
+</div>
+
+<main id="top">
+
+  <!-- ======================= 01 参数输入区 ======================= -->
+  <section class="section" id="input" aria-labelledby="input-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-index" aria-hidden="true">01</span>
+        <div>
+          <h2 id="input-title">参数输入</h2>
+          <p class="section-desc">填写你正在使用的鼠标 DPI 与游戏内灵敏度。所有计算和保存都在你的浏览器本地完成，不会上传任何数据。</p>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <!-- DPI -->
+        <div class="card">
+          <div class="card-head">
+            <h3>鼠标 DPI</h3>
+            <span class="tag">正整数</span>
+          </div>
+
+          <div class="field">
+            <label for="dpi">当前鼠标 DPI</label>
+            <input id="dpi" name="dpi" type="text" inputmode="numeric" autocomplete="off"
+                   spellcheck="false" placeholder="例如 800"
+                   aria-describedby="dpi-help dpi-error">
+          </div>
+
+          <div class="chip-row" role="group" aria-label="常见 DPI 快捷选择">
+            <span class="chip-label">常见值</span>
+            <button type="button" class="chip" data-dpi="400">400</button>
+            <button type="button" class="chip" data-dpi="800">800</button>
+            <button type="button" class="chip" data-dpi="1600">1600</button>
+            <button type="button" class="chip" data-dpi="3200">3200</button>
+          </div>
+
+          <p class="help" id="dpi-help">在鼠标驱动（如 Logitech G HUB、雷云）或鼠标底部 DPI 按键档位中查看。不确定时先用 800。</p>
+          <p class="error" id="dpi-error" role="alert" hidden></p>
+        </div>
+
+        <!-- 游戏内灵敏度 -->
+        <div class="card">
+          <div class="card-head">
+            <h3>游戏内灵敏度</h3>
+            <span class="tag">0.01 ~ 10</span>
+          </div>
+
+          <div class="field">
+            <label for="sens">无畏契约「常规灵敏度」</label>
+            <input id="sens" name="sens" type="text" inputmode="decimal" autocomplete="off"
+                   spellcheck="false" placeholder="例如 0.35"
+                   aria-describedby="sens-help sens-error">
+          </div>
+
+          <div class="slider-row">
+            <button type="button" class="btn btn-step" id="btn-sens-minus" aria-label="灵敏度减少 0.01">−0.01</button>
+            <input id="sens-slider" type="range" min="0.01" max="10" step="0.01" value="0.35"
+                   aria-label="灵敏度快捷滑块（0.01 到 10）">
+            <button type="button" class="btn btn-step" id="btn-sens-plus" aria-label="灵敏度增加 0.01">+0.01</button>
+          </div>
+
+          <p class="help" id="sens-help">游戏内路径：设置 → 一般 → 鼠标 → <b>灵敏度：瞄准</b>。滑块覆盖 0.01~10 全范围，步进 0.01；需要更精细的值（如 0.375）请直接输入。</p>
+          <p class="error" id="sens-error" role="alert" hidden></p>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button type="button" class="btn btn-primary" id="btn-save">保存配置</button>
+        <button type="button" class="btn" id="btn-reset">重置输入</button>
+        <button type="button" class="btn" id="btn-restore" hidden>恢复上次保存</button>
+        <span class="save-hint" id="save-hint">配置会自动保存在本机浏览器（localStorage），刷新页面不丢失。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= 02 EDPI 计算结果区 ======================= -->
+  <section class="section section-alt" id="result" aria-labelledby="result-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-index" aria-hidden="true">02</span>
+        <div>
+          <h2 id="result-title">EDPI 计算结果</h2>
+          <p class="section-desc">EDPI（有效 DPI）= 鼠标 DPI × 游戏内灵敏度。它把「鼠标硬件」和「游戏设置」合并成一个可直接比较的数字。</p>
+        </div>
+      </div>
+
+      <div class="result-top">
+        <div class="card card-primary">
+          <span class="card-label">有效 DPI</span>
+          <div class="big-number">
+            <span id="out-edpi">--</span>
+            <span class="unit">eDPI</span>
+          </div>
+          <p class="formula" id="out-formula">EDPI = DPI × 游戏内灵敏度</p>
+          <p class="band-badge" id="out-band">等待输入…</p>
+
+          <!-- eDPI 位置刻度条：把当前值放到 0~800 的参考刻度上 -->
+          <div class="meter" aria-hidden="true">
+            <div class="meter-track">
+              <div class="meter-zone zone-low"></div>
+              <div class="meter-zone zone-pro"></div>
+              <div class="meter-zone zone-high"></div>
+              <div class="meter-marker" id="meter-marker" hidden></div>
+            </div>
+            <div class="meter-scale">
+              <span>0</span><span>200</span><span>400</span><span>600</span><span>800+</span>
+            </div>
+          </div>
+          <p class="meter-note">灰色 = 低于主流区间（更稳但转身慢） · <b class="c-pro">红色 = 职业选手集中区间 200~400</b> · 灰红 = 高敏区（转身快但微调难）</p>
+        </div>
+
+        <div class="stat-grid">
+          <div class="card stat">
+            <span class="stat-label">cm / 360°</span>
+            <span class="stat-value"><span id="out-cm360">--</span><small>cm</small></span>
+            <span class="stat-desc">鼠标横向移动多少厘米，角色转一整圈。是最通用的「真实手感」指标。</span>
+          </div>
+          <div class="card stat">
+            <span class="stat-label">每 1 cm 转向</span>
+            <span class="stat-value"><span id="out-degcm">--</span><small>度</small></span>
+            <span class="stat-desc">鼠标移动 1 厘米画面转过的角度。</span>
+          </div>
+          <div class="card stat">
+            <span class="stat-label">180° 转身所需</span>
+            <span class="stat-value"><span id="out-cm180">--</span><small>cm</small></span>
+            <span class="stat-desc">被背身偷袭时转身所需距离，需要小于你的鼠标垫可用宽度。</span>
+          </div>
+          <div class="card stat">
+            <span class="stat-label">CS2 / Apex 等效</span>
+            <span class="stat-value"><span id="out-cs2">--</span></span>
+            <span class="stat-desc">按 yaw 系数换算：CS2 灵敏度 ≈ 无畏契约灵敏度 × 3.18。</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <!-- 转身距离表 -->
+        <div class="card">
+          <div class="card-head">
+            <h3>转身距离表</h3>
+            <span class="tag">对照鼠标垫宽度</span>
+          </div>
+          <p class="help">下表是当前配置下转不同角度所需的鼠标横向移动距离，用于判断你的鼠标垫/桌面空间是否够用。</p>
+          <div class="table-scroll">
+            <table class="data-table" id="turn-table">
+              <caption class="sr-only">当前灵敏度下不同转身角度所需的鼠标移动距离</caption>
+              <thead>
+                <tr><th scope="col">转身角度</th><th scope="col">所需鼠标距离</th><th scope="col">说明</th></tr>
+              </thead>
+              <tbody>
+                <tr><th scope="row">45°</th><td data-cell="45">--</td><td>小范围横向扫视</td></tr>
+                <tr><th scope="row">90°</th><td data-cell="90">--</td><td>侧翼检查</td></tr>
+                <tr><th scope="row">180°</th><td data-cell="180">--</td><td>背身反击</td></tr>
+                <tr><th scope="row">360°</th><td data-cell="360">--</td><td>完整一圈</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 灵敏度换算 -->
+        <div class="card">
+          <div class="card-head">
+            <h3>灵敏度换算</h3>
+            <span class="tag">换 DPI 不换手感</span>
+          </div>
+          <p class="help">换了新鼠标（DPI 档位不同）时，用这里算出「等效灵敏度」，手感（cm/360）保持不变。</p>
+
+          <div class="field">
+            <label for="target-dpi">目标 DPI</label>
+            <input id="target-dpi" name="target-dpi" type="text" inputmode="numeric" autocomplete="off"
+                   spellcheck="false" placeholder="例如 1600"
+                   aria-describedby="target-dpi-error">
+          </div>
+          <div class="chip-row" role="group" aria-label="目标 DPI 快捷选择">
+            <span class="chip-label">常见值</span>
+            <button type="button" class="chip" data-target-dpi="400">400</button>
+            <button type="button" class="chip" data-target-dpi="800">800</button>
+            <button type="button" class="chip" data-target-dpi="1600">1600</button>
+            <button type="button" class="chip" data-target-dpi="3200">3200</button>
+          </div>
+          <p class="error" id="target-dpi-error" role="alert" hidden></p>
+
+          <div class="conv-result">
+            <div class="conv-item">
+              <span class="conv-label">等效游戏内灵敏度</span>
+              <span class="conv-value" id="out-conv-sens">--</span>
+            </div>
+            <div class="conv-item">
+              <span class="conv-label">换算后 eDPI</span>
+              <span class="conv-value" id="out-conv-edpi">--</span>
+            </div>
+          </div>
+          <p class="formula">等效灵敏度 = 当前 DPI × 当前灵敏度 ÷ 目标 DPI</p>
+          <p class="help" id="out-conv-note">换算前后 eDPI 与 cm/360 完全一致，只有 DPI 和灵敏度这两个数字变了。</p>
+          <button type="button" class="btn btn-small" id="btn-apply-conv" hidden>把等效灵敏度填回上方输入框</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= 03 鼠标测试画布区 ======================= -->
+  <section class="section" id="test" aria-labelledby="test-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-index" aria-hidden="true">03</span>
+        <div>
+          <h2 id="test-title">鼠标转向测试画布</h2>
+          <p class="section-desc">在画布内移动鼠标，画面会按照你当前灵敏度对应的角度真实旋转 —— <b>上下左右都能自由观察</b>（水平可无限转圈，垂直 ±85°）。用来直观感受「这个灵敏度是快了还是慢了」。</p>
+        </div>
+      </div>
+
+      <!-- ===== 测试流程入口：本工具的核心功能 =====
+           设置项（强度 / 鼠标垫宽度）与开始按钮都在这里，
+           点「开始测试」会立即进入全屏开跑，没有中间的准备面板。 -->
+      <div class="flow-launcher">
+        <div class="flow-launcher-head">
+          <h3>灵敏度匹配测试 <span class="tag tag-hot">推荐</span></h3>
+          <p>
+            用你的鼠标<strong>原始输入</strong>，在多个灵敏度档位下跑<strong>同一套挑战</strong>
+            （甩枪定位 + 跟枪），按命中率、速度、过冲程度与跟枪稳定性综合评分，
+            最后给出<strong>一个匹配你的灵敏度</strong>。
+          </p>
+        </div>
+
+        <div class="flow-launcher-config">
+          <div class="flow-config-group">
+            <span class="flow-config-label">测试强度</span>
+            <div class="flow-pills" role="radiogroup" aria-label="测试强度">
+              <label class="flow-pill">
+                <input type="radio" name="flow-preset" value="fast">
+                <span class="flow-pill-title">快速<em>约 1 分钟</em></span>
+                <span class="flow-pill-desc">3 档 · 每档 4 靶 + 5 秒跟枪</span>
+              </label>
+              <label class="flow-pill">
+                <input type="radio" name="flow-preset" value="normal" checked>
+                <span class="flow-pill-title">标准<em>约 2 分钟</em></span>
+                <span class="flow-pill-desc">5 档 · 每档 6 靶 + 8 秒跟枪</span>
+              </label>
+              <label class="flow-pill">
+                <input type="radio" name="flow-preset" value="fine">
+                <span class="flow-pill-title">精细<em>约 3-4 分钟</em></span>
+                <span class="flow-pill-desc">7 档 · 每档 8 靶 + 10 秒跟枪</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="flow-config-group flow-config-pad">
+            <span class="flow-config-label">鼠标垫可用宽度
+              <span class="flow-optional">可选 · 强烈建议填</span>
+            </span>
+            <div class="flow-pad-row">
+              <input type="text" inputmode="numeric" id="flow-pad" placeholder="例如 45"
+                     aria-label="鼠标垫可用宽度（厘米）">
+              <span class="flow-unit">cm</span>
+            </div>
+            <p class="help">填了之后，转身 180° 需要超过垫子宽度的档位会被自动排除 ——
+              那种灵敏度实战中根本转不过身，测了也没意义。</p>
+          </div>
+        </div>
+
+        <div class="flow-launcher-foot">
+          <div class="flow-launcher-facts">
+            <span>同题同卷 · 乱序测试 · 热身数据丢弃</span>
+            <span>共 <b id="flow-launcher-count">5</b> 档 · 预计 <b id="flow-launcher-est">约 2 分钟</b></span>
+            <span>开始后自动进入全屏并锁定鼠标</span>
+          </div>
+          <button type="button" class="btn btn-primary btn-large" id="btn-flow">开始测试</button>
+        </div>
+        <p class="flow-launcher-note" id="flow-launcher-note">
+          需要先在上方填写有效的 DPI 与游戏内灵敏度
+        </p>
+      </div>
+
+      <!-- ===== 手动模式（可选）：不参与评分，用来自己体会手感 ===== -->
+      <details class="manual-modes">
+        <summary>手动测试模式（可选）：自由转向 / 360° 校准 / 定位测试</summary>
+        <div class="manual-body">
+
+      <div class="test-toolbar">
+        <div class="mode-group" role="group" aria-label="测试模式">
+          <button type="button" class="mode-btn is-active" data-mode="free">自由转向</button>
+          <button type="button" class="mode-btn" data-mode="spin">360° 校准</button>
+          <button type="button" class="mode-btn" data-mode="target">定位测试</button>
+        </div>
+        <div class="toolbar-actions">
+          <button type="button" class="btn btn-primary" id="btn-lock">锁定鼠标（推荐）</button>
+          <button type="button" class="btn" id="btn-view-reset">重置视角</button>
+          <span class="tag" id="lock-state">未锁定</span>
+        </div>
+      </div>
+
+      <div class="canvas-wrap" id="canvas-wrap">
+        <canvas id="range-canvas" width="1200" height="620" tabindex="0"
+                aria-label="灵敏度测试画布。点击画布或「锁定鼠标」按钮后，上下左右移动鼠标即可转动视角；按 Esc 解锁。"></canvas>
+
+        <!-- 画布内浮层：参数无效提示 / 操作提示 / 模式 HUD -->
+        <div class="canvas-overlay" id="canvas-overlay" hidden>
+          <div class="overlay-box">
+            <strong id="overlay-title">请先填写参数</strong>
+            <p id="overlay-text">需要有效的鼠标 DPI 与游戏内灵敏度，才能按真实比例模拟转向。</p>
+          </div>
+        </div>
+        <div class="canvas-hud" id="canvas-hud">
+          <span class="hud-item">模式：<b id="hud-mode">自由转向</b></span>
+          <span class="hud-item">水平：<b id="hud-yaw">0°</b></span>
+          <span class="hud-item">俯仰：<b id="hud-pitch">0°</b></span>
+          <span class="hud-item">移动：<b id="hud-dist">0.0 cm</b></span>
+          <span class="hud-item" id="hud-extra-wrap" hidden>进度：<b id="hud-extra">0 / 360°</b></span>
+        </div>
+        <p class="canvas-tip" id="canvas-tip">按住鼠标左键拖动即可转向；点「锁定鼠标」后可直接移动鼠标（无需按住），输入更接近游戏。</p>
+
+        <!-- ============ 测试流程：实时读数条（测试进行中显示） ============ -->
+        <div class="drill-strip" id="drill-strip" hidden>
+          <span class="drill-item">阶段 <b id="drill-stage">--</b></span>
+          <span class="drill-item">灵敏度 <b id="drill-sens">--</b></span>
+          <span class="drill-item">eDPI <b id="drill-edpi">--</b></span>
+          <span class="drill-item drill-progress" id="drill-progress">--</span>
+        </div>
+
+        <!-- ============ 测试流程：倒计时浮层 ============ -->
+        <div class="flow-countdown" id="flow-countdown" hidden>
+          <div class="flow-cd-inner">
+            <div class="flow-cd-sens" data-cd-sens></div>
+            <div class="flow-cd-num" id="flow-countdown-num">3</div>
+            <div class="flow-cd-label" data-cd-label></div>
+          </div>
+        </div>
+
+        <!-- ============ 测试流程：暂停 / 结果报告 面板 ============ -->
+        <div class="flow-panel" id="flow-panel" hidden>
+          <div class="flow-card" id="flow-card" role="dialog" aria-label="灵敏度测试结果与暂停"></div>
+        </div>
+
+        <!-- 轻提示容器放在画布内：全屏时只有「全屏元素及其后代」会被渲染，
+             放在外面的话全屏中的保存/命中提示会完全看不见。 -->
+        <div class="toast-region" id="toast-region" role="status" aria-live="polite"></div>
+      </div>
+
+      <div class="readout-grid">
+        <div class="readout">
+          <span class="readout-label">累计横向移动</span>
+          <span class="readout-value" id="ro-dist">0.00<small>cm</small></span>
+          <span class="readout-sub" id="ro-counts">0 counts</span>
+        </div>
+        <div class="readout">
+          <span class="readout-label">累计转向角度</span>
+          <span class="readout-value" id="ro-yaw">0.0<small>°</small></span>
+          <span class="readout-sub">按 0.07 × 灵敏度 换算</span>
+        </div>
+        <div class="readout">
+          <span class="readout-label">本次实测 cm/360</span>
+          <span class="readout-value" id="ro-measured">--</span>
+          <span class="readout-sub" id="ro-measured-sub">切换到「360° 校准」并转满一圈</span>
+        </div>
+        <div class="readout">
+          <span class="readout-label">定位命中</span>
+          <span class="readout-value" id="ro-hits">0<small>次</small></span>
+          <span class="readout-sub" id="ro-hits-sub">切换到「定位测试」模式</span>
+        </div>
+      </div>
+
+      <details class="guide">
+        <summary>手动模式测试指引：怎样判断这个灵敏度是否顺手</summary>
+        <div class="guide-body">
+          <div class="guide-callout">
+            <b>想直接得到结论？</b>用上面的「灵敏度匹配测试」—— 它会自动在多个档位跑完下面的
+            第 3、4 步，并用成绩给你一个推荐值。下面三种手动模式适合在流程结束后自己继续体会手感。
+          </div>
+          <ol class="guide-list">
+            <li><b>先锁定鼠标。</b>点击「锁定鼠标（推荐）」，浏览器会直接读取鼠标原始位移（unadjustedMovement，绕过系统鼠标加速），此时移动鼠标不用按住左键，也永远不会移出画布 —— 这与游戏内读取鼠标输入的方式最接近。</li>
+            <li><b>自由转向：感受速度。</b>在「自由转向」模式下随机左右扫视 20~30 秒。<br>
+              · 如果总是不小心转过头、需要来回找目标 → <b>灵敏度偏高</b>（EDPI 太大）。<br>
+              · 如果需要甩很大幅度手臂才能转身、感觉很拖 → <b>灵敏度偏低</b>（EDPI 太小）。<br>
+              · 能一次性把准星停在目标上、不需要二次修正 → 当前区间基本合适。</li>
+            <li><b>360° 校准：建立身体记忆。</b>切到「360° 校准」，点画布开始，然后<b>朝一个方向匀速移动鼠标</b>，直到进度条显示 360°。屏幕会告诉你这一圈用了多少厘米。用尺子在鼠标垫上比划一下这个长度，你就能直观知道：<br>
+              · 这个距离是否小于你的鼠标垫可用宽度（否则转身要抬鼠标）；<br>
+              · 你的常用射击姿势（手腕/手臂）能否舒服地完成。</li>
+            <li><b>定位测试：验证可控性。</b>切到「定位测试」，画面会在<b>视野内随机位置</b>生成红色靶子（上下左右都有，不会让你盲拖找靶）。你要做的就是<b>快速转向、把准星压到靶心并点击左键</b>。重点不是打得快，而是打完后准星是否<b>稳定停住</b>：<br>
+              · 平均命中耗时 700ms 以内、且很少需要二次修正 → 灵敏度适合你；<br>
+              · 频繁过冲（每次都要回拉一点）→ 把 EDPI 降低 10%~15% 再测；<br>
+              · 感觉甩不到、总要大幅度甩手臂 → 把 EDPI 提高 10%~15% 再测。</li>
+            <li><b>一次只改一个变量。</b>每次只调整 eDPI 的 5%~10%，用同一张地图、同一种模式测试，测 3 组再决定是否保留。</li>
+          </ol>
+          <p class="guide-note">提示：画布内的角度完全按照无畏契约的换算关系计算（每 1 count 转动 0.07 × 灵敏度 度），鼠标移动距离按 位移counts ÷ DPI × 2.54 换算成厘米。因此「实测 cm/360」与理论值必然一致 —— 它的意义是让你把屏幕上的角度和真实的厘米数对应起来，从而建立手感，而不是校准设备。</p>
+        </div>
+      </details>
+
+        </div><!-- /.manual-body -->
+      </details><!-- /.manual-modes -->
+    </div>
+  </section>
+
+  <!-- ======================= 04 灵敏度参考说明区 ======================= -->
+  <section class="section section-alt" id="reference" aria-labelledby="ref-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-index" aria-hidden="true">04</span>
+        <div>
+          <h2 id="ref-title">灵敏度参考与说明</h2>
+          <p class="section-desc">以下区间为社区与公开资料汇总的经验参考，用于确定「从哪个数字开始试」，不是官方标准，也不存在唯一正确答案。</p>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-head">
+            <h3>eDPI 区间参考</h3>
+            <span class="tag">社区经验值</span>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table" id="band-table">
+              <caption class="sr-only">无畏契约 eDPI 区间参考表</caption>
+              <thead>
+                <tr><th scope="col">eDPI 区间</th><th scope="col">档位</th><th scope="col">360° 距离</th><th scope="col">特点</th></tr>
+              </thead>
+              <tbody id="band-table-body">
+                <!-- 由 js/main.js 根据 js/data.js 渲染 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>职业选手参考值</h3>
+            <span class="tag">带日期的公开资料</span>
+          </div>
+          <p class="help">选手设置会随版本与个人习惯变化，这些数字只用于对比「量级」，不要直接照抄。</p>
+          <div class="table-scroll">
+            <table class="data-table" id="pro-table">
+              <caption class="sr-only">无畏契约职业选手 DPI 与灵敏度参考</caption>
+              <thead>
+                <tr>
+                  <th scope="col">选手</th><th scope="col">DPI</th><th scope="col">灵敏度</th>
+                  <th scope="col">eDPI</th><th scope="col">cm/360</th>
+                </tr>
+              </thead>
+              <tbody id="pro-table-body">
+                <!-- 由 js/main.js 根据 js/data.js 渲染 -->
+              </tbody>
+            </table>
+          </div>
+          <p class="help" id="pro-source-note"></p>
+        </div>
+      </div>
+
+      <div class="card knowledge">
+        <div class="card-head">
+          <h3>必须知道的基础知识</h3>
+        </div>
+
+        <details open>
+          <summary>EDPI 是什么？为什么用它比较灵敏度？</summary>
+          <div class="knowledge-body">
+            <p><b>EDPI（Effective DPI，有效 DPI）= 鼠标 DPI × 游戏内灵敏度。</b>这是本工具唯一的核心公式。</p>
+            <p>单纯比较「灵敏度」没有意义：同样是 0.35，配 800 DPI 和配 1600 DPI 的实际转身速度差一倍。而单纯比较 DPI 也没意义，因为游戏内灵敏度可以补偿。把两者相乘得到 eDPI 之后，两个玩家的数字就可以直接比大小了 —— eDPI 越大，同样的手部移动带来的画面转动越多，也就是「越快」。</p>
+            <p class="example">举例：800 DPI × 0.35 灵敏度 = <b>280 eDPI</b>；1600 DPI × 0.175 灵敏度 = <b>280 eDPI</b>。这两套设置在实际手感上完全一致。</p>
+            <p class="note">注意：eDPI 只在<b>同一款游戏内</b>可比较。跨游戏比较必须用 cm/360（因为每款游戏的 yaw 系数不同）。</p>
+          </div>
+        </details>
+
+        <details>
+          <summary>cm/360 是什么？为什么它比 eDPI 更「真实」？</summary>
+          <div class="knowledge-body">
+            <p><b>cm/360</b> = 角色在游戏里转满 360° 需要鼠标横向移动的厘米数。它把 DPI、游戏灵敏度、游戏引擎换算系数全部合并成了一个物理长度，因此可以跨游戏、跨设备直接比较，也能直接和你的鼠标垫尺寸对比。</p>
+            <p>本工具使用的换算关系（无畏契约官方引擎参数）：</p>
+            <p class="formula-block">每 1 个鼠标 count 转动的角度 = 0.07 × 游戏内灵敏度（度）<br>
+              cm/360 = (360 × 2.54) ÷ (DPI × 游戏内灵敏度 × 0.07)</p>
+            <p class="example">验算：800 DPI × 0.35 灵敏度 → cm/360 = (360 × 2.54) ÷ (800 × 0.35 × 0.07) = 914.4 ÷ 19.6 ≈ <b>46.7 cm</b>。也就是说，你要在鼠标垫上横向移动约 46.7 厘米，角色才会转完一整圈。</p>
+          </div>
+        </details>
+
+        <details>
+          <summary>DPI 和游戏内灵敏度，应该调哪个？</summary>
+          <div class="knowledge-body">
+            <ul>
+              <li><b>优先固定 DPI，只调游戏内灵敏度</b>：这是最省事的做法，也是本工具推荐的用法。鼠标 DPI 保持不变，游戏内灵敏度的数值就能直接反映你快慢的变化。</li>
+              <li><b>DPI 的意义主要是「传感器工作点」</b>：过低（如 400）在 4K 屏上可能感觉不够细腻；过高（如 6400 以上）可能放大传感器噪声与抖动。绝大多数 FPS 玩家的甜蜜点是 <b>800 或 1600</b>。</li>
+              <li><b>不要用系统控制面板的「指针速度」来调灵敏度</b>：它是软件倍率，会引入像素跳过（插值），属于失真。请务必把它保持在正中间第 6 格（1:1），并关闭「提高指针精确度」（即系统鼠标加速）。</li>
+              <li>换鼠标导致 DPI 档位不同时，用本站的<b>灵敏度换算</b>功能即可保持手法不变。</li>
+            </ul>
+          </div>
+        </details>
+
+        <details>
+          <summary>灵敏度调整小知识（少走弯路）</summary>
+          <div class="knowledge-body">
+            <ul>
+              <li><b>先看鼠标垫，再定灵敏度。</b>转身 180° 所需的厘米数必须明显小于你鼠标垫的可用宽度。若 180° 需要 25 cm 而你的可用区域只有 20 cm，你每次转身都会抬鼠标 —— 这不是手法问题，是配置问题，应该提高 eDPI。</li>
+              <li><b>手腕流 vs 手臂流。</b>主要靠手腕（支点在手腕、活动范围小）的玩家通常落在 300~450 eDPI；主要靠手臂（支点在前臂、用大范围挥动）的玩家通常落在 160~300 eDPI。两者都能打到职业水平，关键是和你天生的动作模式一致。</li>
+              <li><b>不要频繁换灵敏度。</b>肌肉记忆的建立需要稳定重复。改一次至少用 3~5 小时实战（或 2~3 天）再评估，否则你评估的只是「陌生感」。</li>
+              <li><b>微调幅度要小。</b>调整时以 5%~10% 为步长。280 → 300（约 +7%）是合理的一步；280 → 400 属于换了一套设置，之前的记忆无法迁移。</li>
+              <li><b>灵敏度不能补枪法。</b>如果你的主要问题是「看到人先愣一下」「准星起点不在头部高度」，那是准星摆放与预瞄问题，调灵敏度不会改善。</li>
+              <li><b>开镜灵敏度是独立的。</b>无畏契约的「开镜灵敏度倍率」和「瞄准镜灵敏度倍率」是单独设置项，本工具的 DPI/灵敏度指的是<b>常规（腰射）灵敏度</b>。</li>
+            </ul>
+          </div>
+        </details>
+
+        <details>
+          <summary>常见问题（FAQ）</summary>
+          <div class="knowledge-body">
+            <dl class="faq">
+              <dt>多少 eDPI 才是「好」的？</dt>
+              <dd>没有标准答案。职业选手大量集中在 200~400，其中约 280 附近最密集。把 200、280、400 当作三个测试起点，用定位测试各测一轮，选命中率与稳定性最好的那个。</dd>
+
+              <dt>为什么我的「实测 cm/360」和理论值一模一样？</dt>
+              <dd>因为两者用的是同一个换算公式：画布把鼠标位移按 0.07 × 灵敏度 转成角度，同时按 位移 ÷ DPI 转成厘米，所以比值必然一致。这个读数的用途是帮你把「屏幕上的角度」和「鼠标垫上的厘米」对应起来建立手感。它会帮你确认参数填写是否正确（例如填错 DPI，cm/360 就会明显偏离你的实际感受）。</dd>
+
+              <dt>画布里的转向速度和我游戏里感觉不一样？</dt>
+              <dd>画布只忠实还原「鼠标位移 → 旋转角度」的换算关系。实际手感还会受到你的 FOV、屏幕尺寸、分辨率、显示距离的影响。画布用于比较不同灵敏度的相对快慢，以及建立厘米数概念，是可靠的；绝对手感请以游戏内靶场为准。</dd>
+
+              <dt>为什么推荐锁定鼠标？</dt>
+              <dd>锁定鼠标（Pointer Lock）后，浏览器通过 mousemove 事件提供连续的原始位移（movementX），鼠标可以无限移动、不会被窗口边缘截断，并且本工具会请求 <code>unadjustedMovement</code> 以绕过系统鼠标加速。这最接近游戏引擎读取鼠标输入的方式，避免了「拖到窗口边缘就转不动」的失真。</dd>
+
+              <dt>数据会传到服务器吗？</dt>
+              <dd>不会。本站是纯静态页面，所有的计算和配置保存（localStorage）都在你的浏览器内完成，没有任何后端接口，也没有第三方统计脚本。</dd>
+
+              <dt>我的配置存在哪里？换浏览器还在吗？</dt>
+              <dd>存在浏览器的 localStorage 里（键名 <code>valorant-sens-tool:v1</code>）。清空浏览器数据、换浏览器或使用无痕模式后不会保留。点击「保存配置」可随时手动写入。</dd>
+            </dl>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============================ 页脚 ============================ -->
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <div>
+      <p class="footer-title">无畏契约灵敏度测试工具</p>
+      <p class="footer-desc">纯前端静态站点 · 无后端 · 无第三方依赖 · 全部计算在本地完成</p>
+    </div>
+    <div class="footer-meta">
+      <p>本工具为玩家自制的非官方工具，与 Riot Games 无关联。VALORANT 及相关名称、标识为 Riot Games, Inc. 的商标或注册商标。</p>
+      <p>换算系数（yaw = 0.07/count）与职业选手参考值来自公开资料，仅供参考。</p>
+    </div>
+  </div>
+</footer>
+
+<!-- 轻提示容器已移到画布内（见 #toast-region），以便全屏时依然可见 -->
+
+<!--
+  脚本加载顺序（全部为本地文件，无 CDN）：
+  1. data.js     参考数据（区间、职业选手参考值、知识文案）
+  2. calc.js     纯计算函数（无 DOM 依赖，可单独在 Node 中测试）
+  3. storage.js  localStorage 读写封装
+  4. canvas.js   测试画布模块（鼠标采样 + 程序化 3D 场景 + 甩枪/跟枪 drill）
+  5. testflow.js 灵敏度测试流程（引导、评分、推荐；依赖 canvas.js 与 calc.js）
+  6. main.js     UI 装配与实时计算（最后加载，负责组装以上模块）
+-->
+<script src="js/data.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/canvas.js"></script>
+<script src="js/testflow.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
